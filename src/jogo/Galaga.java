@@ -4,6 +4,7 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -22,7 +23,6 @@ import javax.swing.Timer;
 
 public class Galaga extends JPanel implements ActionListener, KeyListener {
     
- 
     public int LARGURA = 800;
     public int ALTURA = 600;
     public int jogadorX = 375;
@@ -38,6 +38,7 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
     public int pontuacao = 0;
     public int vidas = 3;
     public boolean gameOver = false;
+    public boolean telaInicio = true;
     public Random random = new Random();
     public int contadorSpawn = 0;
     public int contadorTiroInimigo = 0;
@@ -58,7 +59,7 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
         this.setFocusable(true);
         this.addKeyListener(this);
         carregarImagens();
-        timer = new Timer(16, this); // pra deixar em 60 fps
+        timer = new Timer(16, this); 
         timer.start();
     }
     
@@ -77,7 +78,7 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
     }
     
     public void adicionarNovoInimigo() {
-        boolean spawnEsquerda = random.nextBoolean(); // 0 = spawn esquerda 1 = spawn direita
+        boolean spawnEsquerda = random.nextBoolean(); 
         int startX, startY, targetX, targetY;
         if (spawnEsquerda) {
             startX = -50;
@@ -89,25 +90,25 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
         targetX = random.nextInt(LARGURA - 80) + 40;
         targetY = random.nextInt(150) + 50;
         int tipoChance = random.nextInt(100);
-        if (pontuacao < 30000) { 
-            tipoInimigoAtual = (tipoChance < 70) ? 1 : 2; // 70% tipo 1, 30% tipo 2
-        } else if (pontuacao < 100000) { 
-            tipoInimigoAtual = (tipoChance < 40) ? 1 : (tipoChance < 75) ? 2 : 3; // 40% tipo 1, 35% tipo 2, 25% tipo 3
+        if (pontuacao < 3000) { 
+            tipoInimigoAtual = (tipoChance < 70) ? 1 : 2;
+        } else if (pontuacao < 15000) { 
+            tipoInimigoAtual = (tipoChance < 40) ? 1 : (tipoChance < 75) ? 2 : 3; 
         } else {
-            tipoInimigoAtual = (tipoChance < 20) ? 1 : (tipoChance < 55) ? 2 : 3; // 20% tipo 1, 35% tipo 2, 45% tipo 3
+            tipoInimigoAtual = (tipoChance < 20) ? 1 : (tipoChance < 55) ? 2 : 3;
         }
         inimigos.add(new Inimigo(startX, startY, tipoInimigoAtual, targetX, targetY));
     }
     
     public int calcularIntervaloSpawn() {
-        int intervaloBase = 55;
-        int reducao = pontuacao / 8000; 
+        int intervaloBase = 30;
+        int reducao = pontuacao / 2000; 
         return Math.max(12, intervaloBase - reducao);
     }
     
     public int calcularMaxInimigos() {
-        int baseMax = 8;
-        int aumento = pontuacao / 20000; 
+        int baseMax = 18;
+        int aumento = pontuacao / 2000; 
         return Math.min(20, baseMax + aumento);
     }
     
@@ -117,6 +118,7 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
     }
     
     public void desenhar(Graphics g) {
+        
         if (fundoImg != null) {
             g.drawImage(fundoImg, 0, 0, LARGURA, ALTURA, this);
         } else {
@@ -124,6 +126,24 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
             GradientPaint gradient = new GradientPaint(0, 0, Color.BLACK, 0, ALTURA, new Color(0, 0, 50));
             g2d.setPaint(gradient);
             g2d.fillRect(0, 0, LARGURA, ALTURA);
+        }
+        
+        if (telaInicio) {
+            g.setFont(new Font("Arial", Font.BOLD, 72));
+            g.setColor(Color.YELLOW);
+            FontMetrics fm = g.getFontMetrics();
+            String titulo = "GALAGA";
+            int x = (LARGURA - fm.stringWidth(titulo)) / 2;
+            int y = ALTURA / 2 - 50;
+            g.drawString(titulo, x, y);
+            g.setFont(new Font("Arial", Font.BOLD, 24));
+            g.setColor(Color.WHITE);
+            fm = g.getFontMetrics();
+            String instrucao = "PRESSIONE ESPAÇO PARA INICIAR";
+            x = (LARGURA - fm.stringWidth(instrucao)) / 2;
+            y = ALTURA / 2 + 50;
+            g.drawString(instrucao, x, y);
+            return;
         }
         if (jogadorImg != null) {
             g.drawImage(jogadorImg, jogadorX, jogadorY, jogadorLargura, jogadorAltura, this);
@@ -180,44 +200,67 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
                 g.fillRect(tiro.x, tiro.y, tiro.largura, tiro.altura);
             }
         }
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setFont(new Font("Arial", Font.BOLD, 20));
+        String scoreText = "SCORE: " + pontuacao;
+        FontMetrics fm = g2d.getFontMetrics();
+        int scoreX = (LARGURA - fm.stringWidth(scoreText)) / 2;
+        int scoreY = 30;
+        g2d.setColor(Color.BLACK);
+        g2d.drawString(scoreText, scoreX-1, scoreY-1);
+        g2d.drawString(scoreText, scoreX+1, scoreY-1);
+        g2d.drawString(scoreText, scoreX-1, scoreY+1);
+        g2d.drawString(scoreText, scoreX+1, scoreY+1);
+        g2d.setColor(Color.RED);
+        g2d.drawString(scoreText, scoreX, scoreY);
         g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("Pontuação: " + pontuacao, 10, 30);
-        g.drawString("Vidas: " + vidas, 10, 60);
+        g.setFont(new Font("Arial", Font.BOLD, 16));
+        g.drawString("VIDAS:", 10, ALTURA - 60);
+        
+        for (int i = 0; i < vidas; i++) {
+            int navesX = 70 + (i * 35);
+            int navesY = ALTURA - 75;
+            if (jogadorImg != null) {
+                g.drawImage(jogadorImg, navesX, navesY, 25, 18, this);
+            } else {
+                g.setColor(Color.GREEN);
+                g.fillRect(navesX, navesY, 25, 18);
+            }
+        }
         
         if (gameOver) {
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
-            g2d.setColor(Color.BLACK);
-            g2d.fillRect(0, ALTURA/2 - 100, LARGURA, 200);
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            Graphics2D g2dOver = (Graphics2D) g;
+            g2dOver.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
+            g2dOver.setColor(Color.BLACK);
+            g2dOver.fillRect(0, ALTURA/2 - 100, LARGURA, 200);
+            g2dOver.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             g.setFont(new Font("Arial", Font.BOLD, 48));
             g.setColor(Color.RED);
             g.drawString("GAME OVER", LARGURA/2 - 120, ALTURA/2);
             g.setFont(new Font("Arial", Font.BOLD, 20));
             g.setColor(Color.WHITE);
-            g.drawString("Pressione R para reiniciar", LARGURA/2 - 100, ALTURA/2 + 50);
-            g.drawString("Pontuação final: " + pontuacao, LARGURA/2 - 80, ALTURA/2 + 80);
+            g.drawString("Pontuação final: " + pontuacao, LARGURA/2 - 80, ALTURA/2 + 50);
+            g.drawString("Pressione ESPAÇO para continuar", LARGURA/2 - 120, ALTURA/2 + 80);
         }
         
         if (vitoria) {
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
-            g2d.setColor(Color.BLACK);
-            g2d.fillRect(0, ALTURA/2 - 100, LARGURA, 200);
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            Graphics2D g2dVit = (Graphics2D) g;
+            g2dVit.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
+            g2dVit.setColor(Color.BLACK);
+            g2dVit.fillRect(0, ALTURA/2 - 100, LARGURA, 200);
+            g2dVit.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             g.setFont(new Font("Arial", Font.BOLD, 48));
             g.setColor(Color.GREEN);
             g.drawString("VITÓRIA!", LARGURA/2 - 100, ALTURA/2);
             g.setFont(new Font("Arial", Font.BOLD, 20));
             g.setColor(Color.WHITE);
             g.drawString("PONTUAÇÃO MÁXIMA!", LARGURA/2 - 100, ALTURA/2 + 50);
-            g.drawString("Pressione R para reiniciar", LARGURA/2 - 100, ALTURA/2 + 80);
+            g.drawString("Pressione ESPAÇO para continuar", LARGURA/2 - 120, ALTURA/2 + 80);
         }
     }
     
     public void actionPerformed(ActionEvent e) {
-        if (!gameOver && !vitoria) {
+        if (!gameOver && !vitoria && !telaInicio) {
             atualizar();
         }
         repaint();
@@ -227,9 +270,11 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
         if (teclaEsquerda && jogadorX > 0) {
             jogadorX -= velocidadeJogador;
         }
+        
         if (teclaDireita && jogadorX < LARGURA - jogadorLargura) {
             jogadorX += velocidadeJogador;
         }
+       
         for (int i = tiros.size() - 1; i >= 0; i--) {
             Tiro tiro = tiros.get(i);
             tiro.y -= tiro.velocidade;
@@ -237,6 +282,7 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
                 tiros.remove(i);
             }
         }
+        
         for (int i = tirosInimigos.size() - 1; i >= 0; i--) {
             TiroInimigo tiro = tirosInimigos.get(i);
             tiro.y += tiro.velocidade;
@@ -244,6 +290,7 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
                 tirosInimigos.remove(i);
             }
         }
+        
         if (pontuacao >= pontuacaoVitoria) {
             vitoria = true;
         }
@@ -251,7 +298,6 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
         intervaloSpawn = calcularIntervaloSpawn();
         maxInimigos = calcularMaxInimigos();
         
-       
         if (inimigos.size() < maxInimigos) {
             contadorSpawn++;
             if (contadorSpawn >= intervaloSpawn) {
@@ -267,7 +313,7 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
         
         boolean mudarDirecao = false;
         for (Inimigo inimigo : inimigos) {
-            if (inimigo.emFormacao) {
+            if (inimigo.emFormacao && !inimigo.fazendoDive) {
                 int velocidade = 1 + inimigo.tipo; 
                 inimigo.x += inimigo.direcao * velocidade;
                 if (inimigo.x <= 0 || inimigo.x >= LARGURA - inimigo.largura) {
@@ -278,36 +324,32 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
         
         if (mudarDirecao) {
             for (Inimigo inimigo : inimigos) {
-                if (inimigo.emFormacao) {
+                if (inimigo.emFormacao && !inimigo.fazendoDive) {
                     inimigo.direcao *= -1;
-                    inimigo.y += 20 + (inimigo.tipo * 5); 
                 }
             }
         }
         
-        for (int i = inimigos.size() - 1; i >= 0; i--) {
-            Inimigo inimigo = inimigos.get(i);
-            if (inimigo.emFormacao && inimigo.y > ALTURA) {
-                inimigo.y = -inimigo.altura;
-                inimigo.x = random.nextInt(LARGURA - inimigo.largura);
-                inimigo.targetX = inimigo.x;
-                inimigo.targetY = random.nextInt(150) + 50;
-                inimigo.emFormacao = false; 
+        for (Inimigo inimigo : inimigos) {
+            if (inimigo.emFormacao && !inimigo.fazendoDive && random.nextInt(200) < 2) { // 1.5% chance por frame (muito mais frequente)
+                inimigo.iniciarDive(jogadorX + jogadorLargura/2);
+            }
+            if (inimigo.fazendoDive) {
+                inimigo.atualizarDive();
             }
         }
         
         contadorTiroInimigo++;
-        int frequenciaTiro = Math.max(15, 40 - (pontuacao / 4000)); 
+        int frequenciaTiro = Math.max(5, 15 - (pontuacao / 3000)); // Muito mais frequente
         if (contadorTiroInimigo > frequenciaTiro && !inimigos.isEmpty()) {
             Inimigo atirador = inimigos.get(random.nextInt(inimigos.size()));
-            int chanceTiro = Math.min(70, 40 + (pontuacao / 8000));
-            if (atirador.emFormacao && (atirador.tipo >= 2 || random.nextInt(100) < chanceTiro)) {
+            int chanceTiro = Math.min(90, 70 + (pontuacao / 5000)); // Chance maior de tiro
+            if (atirador.emFormacao && !atirador.fazendoDive && (atirador.tipo >= 1 || random.nextInt(100) < chanceTiro)) {
                 tirosInimigos.add(new TiroInimigo(atirador.x + atirador.largura/2, atirador.y + atirador.altura));
             }
             contadorTiroInimigo = 0;
         }
         
-       // colisão tiros do player com inimigos
         for (int i = tiros.size() - 1; i >= 0; i--) {
             Tiro tiro = tiros.get(i);
             for (int j = inimigos.size() - 1; j >= 0; j--) {
@@ -321,7 +363,7 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
                 }
             }
         }
-        // colisão tiros inimigos com o player
+        
         for (int i = tirosInimigos.size() - 1; i >= 0; i--) {
             TiroInimigo tiro = tirosInimigos.get(i);
             if (colidiu(tiro.x, tiro.y, tiro.largura, tiro.altura,
@@ -331,16 +373,6 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
                 if (vidas <= 0) {
                     gameOver = true;
                 }
-                break;
-            }
-        }
-        
-        // colisão dos inimigos com o play
-        for (Inimigo inimigo : inimigos) {
-            if (inimigo.emFormacao && 
-                colidiu(inimigo.x, inimigo.y, inimigo.largura, inimigo.altura,
-                       jogadorX, jogadorY, jogadorLargura, jogadorAltura)) {
-                gameOver = true;
                 break;
             }
         }
@@ -357,16 +389,20 @@ public class Galaga extends JPanel implements ActionListener, KeyListener {
             teclaEsquerda = true;
         }
         if (codigo == KeyEvent.VK_RIGHT || codigo == KeyEvent.VK_D) {
-            teclaDireita = true;
+            teclaDireita = true;         
         }
-        if (codigo == KeyEvent.VK_SPACE && !gameOver) {
-            teclaEspaco = true;
-            if (tiros.size() < 5) {
-                tiros.add(new Tiro(jogadorX + jogadorLargura/2, jogadorY));
+        if (codigo == KeyEvent.VK_SPACE) {
+            if (telaInicio) {
+                telaInicio = false;
+            } else if (gameOver || vitoria) {
+                telaInicio = true;
+                reiniciarJogo();
+            } else {
+                teclaEspaco = true;
+                if (tiros.size() < 5) {
+                    tiros.add(new Tiro(jogadorX + jogadorLargura/2, jogadorY));
+                }
             }
-        }
-        if (codigo == KeyEvent.VK_R && (gameOver || vitoria)) {
-            reiniciarJogo();
         }
     }
     
